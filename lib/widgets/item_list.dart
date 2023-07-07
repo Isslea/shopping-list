@@ -23,6 +23,7 @@ class ItemList extends StatefulWidget {
 
 class _ItemListState extends State<ItemList> {
   List<ItemModel> _items = [];
+  bool showItems = true;
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _ItemListState extends State<ItemList> {
         'lists/${widget.id}/items.json');
     final response = await http.get(url);
     final Map<String, dynamic>? listData = json.decode(response.body);
-    final List<ItemModel> _loadedItems = [];
+    List<ItemModel> _loadedItems = [];
     if (listData != null) {
       for (final item in listData.entries) {
         _loadedItems.add(
@@ -112,39 +113,38 @@ class _ItemListState extends State<ItemList> {
     if (_items.isNotEmpty) {
       content = ListView.builder(
         itemCount: _items.length,
-        itemBuilder: (ctx, index) => Dismissible(
-          onDismissed: (direction) {
-            _removeItem(_items[index]);
-          },
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: const Icon(Icons.delete, color: Colors.white),
-          ),
-          key: ValueKey(_items[index].id),
-          child: ListTile(
-            title: Text(
-              _items[index].name,
-              style: const TextStyle(
-                fontSize: 18,
-              ),
-            ),
-            leading: Text(
-              _items[index].quantity.toString(),
-            ),
-            trailing: Checkbox(
-              value: _items[index].isDone,
-              onChanged: (value) {
-                if (value == true) {
-                  _isDone(_items[index], true);
-                }else {
-                  _isDone(_items[index], false);
-                }
+        itemBuilder: (ctx, index) {
+          if (!_items[index].isDone || !showItems) {
+            return Dismissible(
+              onDismissed: (direction) {
+                _removeItem(_items[index]);
               },
-            ),
-          ),
-        ),
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              key: ValueKey(_items[index].id),
+              child: ListTile(
+                title: Text(_items[index].name),
+                leading: Text(
+                  _items[index].quantity.toString(),
+                ),
+                trailing: Checkbox(
+                  value: _items[index].isDone,
+                  onChanged: (value) {
+                    if (value == true) {
+                      _isDone(_items[index], true);
+                    }else {
+                      _isDone(_items[index], false);
+                    }
+                  },
+                ),
+              ),
+            );
+          }
+        },
       );
     }
 
@@ -154,12 +154,22 @@ class _ItemListState extends State<ItemList> {
         backgroundColor: widget.color.colorCode,
         actions: [
           IconButton(
-            onPressed: _addItem,
-            icon: const Icon(Icons.add),
+            onPressed: () {
+              setState(() {
+                showItems = !showItems;
+              });
+            },
+            icon: showItems
+                ? const Icon(Icons.visibility_off)
+                : const Icon(Icons.visibility),
           ),
           IconButton(
             onPressed: _editList,
             icon: const Icon(Icons.edit),
+          ),
+          IconButton(
+            onPressed: _addItem,
+            icon: const Icon(Icons.add),
           ),
         ],
       ),
